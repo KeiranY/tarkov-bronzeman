@@ -1,6 +1,7 @@
 {
     "allowRunThrough": true,
     "allowDeath": false,
+    "unlockFromInventory": true,
     "hideItems": true,
     "allTraders": false,
     "traders": [

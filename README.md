@@ -11,6 +11,8 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 
 `allowDeath`, if true allows you to unlock items even if you died/were MIA.
 
+`unlockFromInventory`, if true will unlock any items already in your player inventory.
+
 `hideItems`, if true will remove locked items from trader inventories, if false will set their stock to 0 instead.
 
 `allTraders`, if true all traders (include those from mods) are affected, otherwise use the next option.

@@ -9,7 +9,10 @@ class Mod
         this.package = require('./package.json');
         Logger.info(`Loading: ${this.package.name} : v${this.package.version}`);
 
-        SaveServer.onLoad[this.package.name] = this.loadProfile;
+        // Unlock from our profile
+        if (config.unlockFromInventory) {
+            SaveServer.onLoad[this.package.name] = this.loadProfile;
+        }
         // When leaving a raid, update our unlocks
         HttpRouter.onStaticRoute["/raid/profile/save"][this.package.name] = this.saveRaidProgress;
         // Filter trader results
