@@ -31,8 +31,11 @@ class Mod
         if (!('bronzemanItems' in profile)) profile['bronzemanItems'] = [];
 
         let origUnlocks = profile.bronzemanItems.length;
-        for (let item of profile.characters.pmc.Inventory.items) {
-            profile.bronzemanItems.push(item._tpl);
+        let items = profile?.characters?.pmc?.Inventory?.items;
+        if (items) {
+            for (let item of profile?.characters?.pmc?.Inventory?.items) {
+                profile.bronzemanItems.push(item._tpl);
+            }
         }
 
         Logger.info(`[bronzeman] Unlocked ${profile.bronzemanItems.length - origUnlocks} items from inventory for player ${sessionID}`)

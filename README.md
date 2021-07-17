@@ -32,6 +32,12 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 
 ## Changelog
 
+## 0.1.1
+
+Bugfix:
+
+- Fixed an issue trying to unlock items from a profile without any.
+
 ### 0.1.0
 
 Features:
