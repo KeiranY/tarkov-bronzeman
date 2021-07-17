@@ -1,0 +1,10 @@
+{
+	"name": "Bronzeman",
+	"author": "KcY",
+	"version": "0.1.0",
+	"license": "Unlicense",
+	"main": "package.js",
+	"devDependencies": {
+		"aki-server": "file:../../server/project"
+	}
+}
