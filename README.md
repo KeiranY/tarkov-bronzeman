@@ -1,9 +1,14 @@
-# Tarkov Bronzeman mode
+# Bronzeman Mode for [Singleplayer Tarkov](https://www.sp-tarkov.com/)
 
-Inspired by [Gudi's OSRS gamemode|https://www.youtube.com/watch?v=GFNfa2saOJg] of the same name, Bronzeman mode is a gamemode that requires players to have "earned" an item through normal means before being able to purchase it.
+Inspired by [Gudi's OSRS gamemode](https://www.youtube.com/watch?v=GFNfa2saOJg) of the same name, Bronzeman mode is a gamemode that requires players to have "earned" an item through normal means before being able to purchase it.
 
 Upon installing this mod you'll notice that the traders are no longer willing to sell you anything. Once you've successfully completed a raid you will "unlock" all of the items you've extracted with, and will now be able to purchase them from traders.
 
+## Installation
+
+1. Download the latest release.
+2. Extract to the folder `user/mods/` in the same folder as your SPT-AKI install.
+3. Edit the `config.json` to your liking, configuration options listed below.
 
 ## Configuration items
 
@@ -31,7 +36,7 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 
 Features:
 
-- Automatically unlock any items in a players stash on startup profile load.
+- Add `unlockFromInventory` to automatically unlock any items in a players stash on startup/profile load.
 - Add `hideItems` to allow you to either hide locked items or set their trader stock to 0.
   - I've tried a few ways to also have "out of stock" trades on flea market/ragfair but it seems AKI stops generating new trades if the stock is set to 0.
 
