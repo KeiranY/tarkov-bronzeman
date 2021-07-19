@@ -10,18 +10,20 @@ class Mod
         Logger.info(`Loading: ${this.package.name} : v${this.package.version}`);
 
         // Unlock from our profile
-        if (config.unlockFromInventory) {
+        if (config.unlocks.inventory) {
             SaveServer.onLoad[this.package.name] = this.loadProfile.bind(this);
         }
         // Unlock items gained from quests
-        if (config.unlockQuestRewards) {
-            
+        if (config.unlocks.quests) {
             ItemEventRouter.onEvent["QuestComplete"][this.package.name] = this.questComplete.bind(this);
         }
-        // When leaving a raid, update our unlocks
-        HttpRouter.onStaticRoute["/raid/profile/save"][this.package.name] = this.saveRaidProgress.bind(this);
+        // Unlock items extracted from raids
+        if (config.unlocks.raid) {        
+            HttpRouter.onStaticRoute["/raid/profile/save"][this.package.name] = this.saveRaidProgress.bind(this);
+        }
+
         // Filter trader results
-        HttpRouter.onDynamicRoute["/client/trading/api/getTraderAssort/"][this.package.name] = this.getTraderAssort;
+        HttpRouter.onDynamicRoute["/client/trading/api/getTraderAssort/"][this.package.name] = this.getTraderAssort.bind(this);
         // Filter flea results
         if (config.includeRagfair) {    
             this.origGetOffers = RagfairController.getOffers;
@@ -64,23 +66,28 @@ class Mod
                 Logger.info(JSON.stringify(items.filter(i => i?.upd?.SpawnedInSession == true)));
                 this.unlockItems(items.filter(i => i?.upd?.SpawnedInSession == true), sessionID)
             } else {
-            this.unlockItems(items, sessionID);
-        }
+                this.unlockItems(items, sessionID);
+            }
         }
         return SaveServer.profiles[sessionID];
     }
 
     saveRaidProgress(url, raid, sessionID, output) {
-        if  (raid.exit === "survived" || // Unlock if survived
-            (raid.exit === "runner" && config.allowRunThrough) || // Unlock if run through, and enabled
-            config.allowDeath) { // Unlock always if death allowed
-                Logger.info("[bronzeman] Unlocking raid items for session " + sessionID);
-                // For each item we ended the raid with
+        if (raid.exit === "runner" && !config.unlocks.raidRunThrough) {
+            Logger.info("[bronzeman] Not unlocking run-through raid items as unlocks.raidRunThrough is false.");
+            return;
+        }
+        if (raid.exit !== "runner" && raid.exit !== "survived" && !config.unlocks.raidDeath) {
+            Logger.info("[bronzeman] Not unlocking death/MIA raid items as unlocks.raidDeath is false.");
+            return;
+        }
+        Logger.info("[bronzeman] Unlocking raid items for session " + sessionID);
+        // For each item we ended the raid with
         if (config.unlocks.foundInRaidOnly) {
             Logger.info(JSON.stringify(raid.profile.Inventory.items));
             this.unlockItems(raid.profile.Inventory.items.filter(i => i?.upd?.SpawnedInSession == true), sessionID)
         } else {
-                this.unlockItems(raid.profile.Inventory.items, sessionID);
+            this.unlockItems(raid.profile.Inventory.items, sessionID);
         }
         // Don't change the response
         return output;

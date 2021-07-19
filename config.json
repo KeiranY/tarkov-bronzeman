@@ -1,8 +1,12 @@
 {
-    "allowRunThrough": true,
-    "allowDeath": false,
-    "unlockFromInventory": true,
-    "unlockQuestRewards": true,
+    "unlocks": {
+        "raid": true,
+        "raidRunThrough": false,
+        "raidDeath": false,
+        "inventory": true,
+        "quests": true,
+        "foundInRaidOnly": true
+    },
     "hideItems": true,
     "allTraders": false,
     "traders": [
