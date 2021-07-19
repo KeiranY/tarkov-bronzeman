@@ -2,6 +2,7 @@
     "allowRunThrough": true,
     "allowDeath": false,
     "unlockFromInventory": true,
+    "unlockQuestRewards": true,
     "hideItems": true,
     "allTraders": false,
     "traders": [

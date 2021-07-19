@@ -11,59 +11,68 @@ class Mod
 
         // Unlock from our profile
         if (config.unlockFromInventory) {
-            SaveServer.onLoad[this.package.name] = this.loadProfile;
+            SaveServer.onLoad[this.package.name] = this.loadProfile.bind(this);
+        }
+        // Unlock items gained from quests
+        if (config.unlockQuestRewards) {
+            
+            ItemEventRouter.onEvent["QuestComplete"][this.package.name] = this.questComplete.bind(this);
         }
         // When leaving a raid, update our unlocks
-        HttpRouter.onStaticRoute["/raid/profile/save"][this.package.name] = this.saveRaidProgress;
+        HttpRouter.onStaticRoute["/raid/profile/save"][this.package.name] = this.saveRaidProgress.bind(this);
         // Filter trader results
         HttpRouter.onDynamicRoute["/client/trading/api/getTraderAssort/"][this.package.name] = this.getTraderAssort;
-
-        if (config.includeRagfair) {
-            // Filter flea results
+        // Filter flea results
+        if (config.includeRagfair) {    
             this.origGetOffers = RagfairController.getOffers;
             RagfairController.getOffers = this.getOffers.bind(this);
         }
     }
 
-    loadProfile(sessionID) {
-
+    unlockItems(items, sessionID) {
+        // Get player profile
         let profile = SaveServer.profiles[sessionID];
-        if (!('bronzemanItems' in profile)) profile['bronzemanItems'] = [];
+        // Set bronzemanItems to an empty arrar if it's missing (i.e. a fresh account)
+        if (!('bronzemanItems' in profile)) profile.bronzemanItems = [];
 
-        let origUnlocks = profile.bronzemanItems.length;
-        let items = profile?.characters?.pmc?.Inventory?.items;
-        if (items) {
-            for (let item of profile?.characters?.pmc?.Inventory?.items) {
-                profile.bronzemanItems.push(item._tpl);
-            }
+        let origCount = profile.bronzemanItems.length;
+        for (let item of items) {
+            // If the item is missing it's template (unlikely), or is already unlocked
+            if (!item._tpl || profile.bronzemanItems.includes(item._tpl)) continue;
+            // Unlock item
+            profile.bronzemanItems.push(item._tpl);
         }
+        Logger.info(`[bronzeman] Unlocked ${profile.bronzemanItems.length - origCount} items for player ${profile.info?.username}`)
+    }
 
-        Logger.info(`[bronzeman] Unlocked ${profile.bronzemanItems.length - origUnlocks} items from inventory for player ${sessionID}`)
-        return profile;
+    questComplete(pmcData, body, sessionID, result) {
+        Logger.info(`[bronzeman] Unlocking quest items for session ${sessionID}`);
+        let quest = DatabaseServer.tables.templates.quests[body.qid];
+        let items = QuestController.getQuestRewardItems(quest, "Success");
+
+        Logger.info(JSON.stringify(items));
+        this.unlockItems(items, sessionID);
+
+        return result;
+    }
+
+    loadProfile(sessionID) {
+        Logger.info("[bronzeman] Unlocking items from stash for session " + sessionID);
+        let items = SaveServer.profiles[sessionID]?.characters?.pmc?.Inventory?.items;
+        if (items) {
+            this.unlockItems(items, sessionID);
+        }
+        return SaveServer.profiles[sessionID];
     }
 
     saveRaidProgress(url, raid, sessionID, output) {
         if  (raid.exit === "survived" || // Unlock if survived
             (raid.exit === "runner" && config.allowRunThrough) || // Unlock if run through, and enabled
             config.allowDeath) { // Unlock always if death allowed
-                Logger.info("[bronzeman] Saving progress for raid session " + sessionID);
-
-                // Get player profile
-                let profile = SaveServer.profiles[sessionID];
-                if (!('bronzemanItems' in profile)) profile['bronzemanItems'] = [];
-
+                Logger.info("[bronzeman] Unlocking raid items for session " + sessionID);
                 // For each item we ended the raid with
-                for (var item of raid.profile.Inventory.items) {
-                    // Don't unlock invalid items, or the same item multiple times
-                    if (!item._tpl || profile['bronzemanItems'].includes(item._tpl)) continue;
-
-                    // Unlock item
-                    profile['bronzemanItems'].push(item._tpl);
-                }
-
-                Logger.debug(`[bronzeman] ${ profile['bronzemanItems'].length} total items unlocked`);
+                this.unlockItems(raid.profile.Inventory.items, sessionID);
         }
-
         // Don't change anything about the response
         return output;
     }
