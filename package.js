@@ -60,7 +60,12 @@ class Mod
         Logger.info("[bronzeman] Unlocking items from stash for session " + sessionID);
         let items = SaveServer.profiles[sessionID]?.characters?.pmc?.Inventory?.items;
         if (items) {
+            if (config.unlocks.foundInRaidOnly) {
+                Logger.info(JSON.stringify(items.filter(i => i?.upd?.SpawnedInSession == true)));
+                this.unlockItems(items.filter(i => i?.upd?.SpawnedInSession == true), sessionID)
+            } else {
             this.unlockItems(items, sessionID);
+        }
         }
         return SaveServer.profiles[sessionID];
     }
@@ -71,9 +76,13 @@ class Mod
             config.allowDeath) { // Unlock always if death allowed
                 Logger.info("[bronzeman] Unlocking raid items for session " + sessionID);
                 // For each item we ended the raid with
+        if (config.unlocks.foundInRaidOnly) {
+            Logger.info(JSON.stringify(raid.profile.Inventory.items));
+            this.unlockItems(raid.profile.Inventory.items.filter(i => i?.upd?.SpawnedInSession == true), sessionID)
+        } else {
                 this.unlockItems(raid.profile.Inventory.items, sessionID);
         }
-        // Don't change anything about the response
+        // Don't change the response
         return output;
     }
 
