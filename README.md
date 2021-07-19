@@ -12,11 +12,17 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 
 ## Configuration items
 
-`allowRunThrough`, if true allows you to unlock items even if the raid was a "Run Through".
+`unlocks.raid`, if true allows you to unlock items extracted from a raid (unlikely you'd want this disabled)
 
-`allowDeath`, if true allows you to unlock items even if you died/were MIA.
+`unlocks.raidRunThrough`, if true allows you to unlock items even if the raid was a "Run Through".
 
-`unlockFromInventory`, if true will unlock any items already in your player inventory.
+`unlocks.raidDeath`, if true allows you to unlock items even if you died/were MIA.
+
+`unlocks.inventory`, if true will unlock any items already in your player inventory.
+
+`unlocks.quests`, if true unlocks any items receieved as quest rewards.
+
+`unlocks.foundInRaidOnly`, if true will only unlock "Found in raid" items. Affects both raids and inventory unlocks.
 
 `hideItems`, if true will remove locked items from trader inventories, if false will set their stock to 0 instead.
 
@@ -31,6 +37,16 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 `requireUnlockComponents`, if true you'll have to have unlocked every item on a weapon, in a bag, etc. in order to purchase it
 
 ## Changelog
+
+## 0.2.0
+
+Features:
+
+- Rewrite of the unlock config items, they're now held under `unlocks` for a bit of clarity. Docs have been updated to reflect this.
+- Add `unlocks.quests` to allow unlocking of items recieved as quest rewards
+- Add `unlocks.foundInRaidOnly` to restrict unlocking of items to those found in raid.
+  - Note: `unlocks.raidRunThrough` is superseded by this, as any items from a runthrough are marked as not found in raid (unless changed by another mod)
+- Minor rewrites and logging changes.
 
 ## 0.1.1
 
