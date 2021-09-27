@@ -72,23 +72,30 @@ class Mod
         return SaveServer.profiles[sessionID];
     }
 
-    saveRaidProgress(url, raid, sessionID, output) {
-        if (raid.exit === "runner" && !config.unlocks.raidRunThrough) {
+    saveRaidProgress(url, raid, sessionID, output) {     
+        let canUnlockItems = true;
+
+        let isRunThrough = raid.exit === "runner";
+        let isDeath = !isRunThrough && raid.exit !== "survived";
+
+        if (isRunThrough && !config.unlocks.raidRunThrough) {
             Logger.info("[bronzeman] Not unlocking run-through raid items as unlocks.raidRunThrough is false.");
-            return;
+            canUnlockItems = false;
         }
-        if (raid.exit !== "runner" && raid.exit !== "survived" && !config.unlocks.raidDeath) {
+        else if (isDeath && !config.unlocks.raidDeath) {
             Logger.info("[bronzeman] Not unlocking death/MIA raid items as unlocks.raidDeath is false.");
-            return;
+            canUnlockItems = false;
         }
-        Logger.info("[bronzeman] Unlocking raid items for session " + sessionID);
-        // For each item we ended the raid with
-        if (config.unlocks.foundInRaidOnly) {
-            Logger.info(JSON.stringify(raid.profile.Inventory.items));
-            this.unlockItems(raid.profile.Inventory.items.filter(i => i?.upd?.SpawnedInSession == true), sessionID)
-        } else {
-            this.unlockItems(raid.profile.Inventory.items, sessionID);
+
+        if (canUnlockItems) {
+            Logger.info("[bronzeman] Unlocking raid items for session " + sessionID);
+            let itemsToUnlock = raid.profile.Inventory.items;
+            if (config.unlocks.foundInRaidOnly) {
+                itemsToUnlock = itemsToUnlock.filter(i => i?.upd?.SpawnedInSession == true);
+            }
+            this.unlockItems(itemsToUnlock, sessionID);
         }
+        
         // Don't change the response
         return output;
     }
