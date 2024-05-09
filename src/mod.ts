@@ -2,7 +2,7 @@
 import { IPreAkiLoadMod }               from "@spt-aki/models/external/IPreAkiLoadMod";
 import { ILogger }                      from "@spt-aki/models/spt/utils/ILogger";
 import { LogTextColor }                 from "@spt-aki/models/spt/logging/LogTextColor";
-import { LogBackgroundColor }                 from "@spt-aki/models/spt/logging/LogBackgroundColor";
+import { LogBackgroundColor }           from "@spt-aki/models/spt/logging/LogBackgroundColor";
 import { IEmptyRequestData }            from "@spt-aki/models/eft/common/IEmptyRequestData";
 import { ITraderAssort }                from "@spt-aki/models/eft/common/tables/ITrader";
 import { Item }                         from "@spt-aki/models/eft/common/tables/IItem";
@@ -104,21 +104,13 @@ export class Bronzeman implements IPreAkiLoadMod {
                         logger.info(`[bronzeman] Loading flea for ${profile.info.username} (${sessionID})`);
 
                         const origCount = out.offers.filter(o => !o.notAvailable).length;
-                        const available = bronzeman.itemCheck(profile);
 
                         const toRemove = [];
                         for (const offer of out.offers) {
                             if (offer.notAvailable) continue;
                             if (config.requireUnlockComponents) {
                                 for (const item of offer.items) {
-                                    if (!available.includes(item._tpl)) {
-                                        if (config.ignoreItems.includes(item._tpl)) {
-                                            if (config.debug) {
-                                                const name = itemHelper.getItemName(item._tpl);
-                                                logger.logWithColor(`[bronzeman] Allowlisted flea item: (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.GREEN);
-                                            }
-                                            continue;
-                                        }
+                                    if (!bronzeman.canPurchase(profile, item._tpl)) {
                                         if (config.debug) {
                                             for (const root of offer.items) {
                                                 if (root._id === offer.root) {
@@ -135,14 +127,7 @@ export class Bronzeman implements IPreAkiLoadMod {
                             } else {
                                 for (const item of offer.items) {
                                     if (item._id === offer.root) {
-                                        if (!available.includes(item._tpl)) {
-                                            if (config.ignoreItems.includes(item._tpl)) {
-                                                if (config.debug) {
-                                                    const name = itemHelper.getItemName(item._tpl);
-                                                    logger.logWithColor(`[bronzeman] Allowlisted flea item: (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.GREEN);
-                                                }
-                                                continue;
-                                            }
+                                        if (!bronzeman.canPurchase(profile, item._tpl)) {
                                             if (config.debug) {
                                                 const name = itemHelper.getItemName(item._tpl);
                                                 logger.logWithColor(`[bronzeman] Filtering offer: (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.RED);
@@ -188,35 +173,27 @@ export class Bronzeman implements IPreAkiLoadMod {
 
                     const out: ITraderAssort = JSON.parse(output).data;
                     const origCount = out.items.filter(i => i.parentId === "hideout").length;
-                    const available = bronzeman.itemCheck(profile);
                     
                     const toRemove = [];
                     for (const item of out.items) {
-                        if (!available.includes(item._tpl)) {
-                            if (config.ignoreItems.includes(item._tpl)) {
-                                if (config.debug) {
-                                    const name = itemHelper.getItemName(item._tpl);
-                                    logger.logWithColor(`[bronzeman] Allowlisted trader item: (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.GREEN);
-                                }
-                                continue;
+                        if (bronzeman.canPurchase(profile, item._tpl)) continue;
+
+                        if (item.parentId === "hideout") {
+                            // If the item is the main item and not a component/child, remove it
+                            toRemove.push(item._id);
+                            if (config.debug) {
+                                const name = itemHelper.getItemName(item._tpl);
+                                logger.logWithColor(`[bronzeman] Filtering trader: (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.RED);
                             }
-                            if (item.parentId === "hideout") {
-                                // If the item is the main item and not a component/child, remove it
-                                toRemove.push(item._id);
-                                if (config.debug) {
-                                    const name = itemHelper.getItemName(item._tpl);
-                                    logger.logWithColor(`[bronzeman] Filtering trader: (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.RED);
-                                }
-                            } else if (config.requireUnlockComponents) {
-                                // If the item is a child, and we require all components be unlocked, remove the parent item
-                                toRemove.push(item.parentId)
-                                if (config.debug) {
-                                    for (const parent of out.items) {
-                                        if (parent._id === item.parentId) {
-                                            const parentName = itemHelper.getItemName(parent._tpl);
-                                            const name = itemHelper.getItemName(item._tpl);
-                                            logger.logWithColor(`[bronzeman] Filtering trader: (${parent._tpl}) ${parentName} w/ component (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.RED);
-                                        }
+                        } else if (config.requireUnlockComponents) {
+                            // If the item is a child, and we require all components be unlocked, remove the parent item
+                            toRemove.push(item.parentId)
+                            if (config.debug) {
+                                for (const parent of out.items) {
+                                    if (parent._id === item.parentId) {
+                                        const parentName = itemHelper.getItemName(parent._tpl);
+                                        const name = itemHelper.getItemName(item._tpl);
+                                        logger.logWithColor(`[bronzeman] Filtering trader: (${parent._tpl}) ${parentName} w/ component (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.RED);
                                     }
                                 }
                             }
@@ -230,7 +207,7 @@ export class Bronzeman implements IPreAkiLoadMod {
                             if (!toRemove.includes(i._id)) return i;
                             i.upd = {
                                 UnlimitedCount: false,
-                                StackObjectsCount: 0,
+                                StackObjectsCount: 0
                                 //...i.upd
                             }
                             return i;
@@ -246,11 +223,41 @@ export class Bronzeman implements IPreAkiLoadMod {
 
 @singleton()
 class BronzemanMod {
+
+    categories = [];
+
     constructor(
         @inject("WinstonLogger") private logger: ILogger,
         @inject("SaveServer") private saveServer: SaveServer,
         @inject("ItemHelper") private itemHelper: ItemHelper
-    ) {}
+    ) {
+        // Allow ignored categories
+        if (config.ignoreCategories.keys) this.categories.push("543be5e94bdc2df1348b4568");
+        if (config.ignoreCategories.specialEquipment) this.categories.push("5447e0e74bdc2d3c308b4567");
+        if (config.ignoreCategories.secureContainers) this.categories.push("5448bf274bdc2dfc2f8b456a");
+        if (config.ignoreCategories.maps) this.categories.push("567849dd4bdc2d150f8b456e");
+        if (config.ignoreCategories.money) this.categories.push("543be5dd4bdc2deb348b4569");
+        if (config.ignoreCategories.foodAndDrink) this.categories.push("543be6674bdc2df1348b4569");
+        if (config.ignoreCategories.barterItems) this.categories.push("5448eb774bdc2d0a728b4567");
+        if (config.ignoreCategories.meleeWeapons) this.categories.push("5447e1d04bdc2dff2f8b4567");
+        if (config.ignoreCategories.throwables) this.categories.push("543be6564bdc2df4348b4568");
+        if (config.ignoreCategories.infoItems) this.categories.push("5448ecbe4bdc2d60728b4568");
+        if (config.ignoreCategories.meds) this.categories.push("543be5664bdc2dd4348b4569");
+        if (config.ignoreCategories.backpacks) this.categories.push("5448e53e4bdc2d60728b4567");
+        if (config.ignoreCategories.rigs) this.categories.push("5448e5284bdc2dcb718b4567");
+        if (config.ignoreCategories.weaponParts) this.categories.push("5448fe124bdc2da5018b4567");
+        if (config.ignoreCategories.guns) this.categories.push("5422acb9af1c889c16000029");
+        if (config.ignoreCategories.armourHelmet) this.categories.push("57bef4c42459772e8d35a53b");
+        if (config.ignoreCategories.headphones) this.categories.push("5645bcb74bdc2ded0b8b4578");
+        if (config.ignoreCategories.armBands) this.categories.push("5b3f15d486f77432d0509248");
+        if (config.ignoreCategories.ammo) this.categories.push("5485a8684bdc2da71d8b4567");
+        if (config.ignoreCategories.ammoBoxes) this.categories.push("543be5cb4bdc2deb348b4568");
+        if (config.ignoreCategories.containers) {
+            this.categories.push("5795f317245977243854e041");
+            // Pistol case in the incorrect category - grouped with quest items
+            this.categories.push("5671435f4bdc2d96058b4569");
+        }
+    }
 
     public initPlayer(sessionID: string) {
         const profile = this.saveServer.getProfile(sessionID);
@@ -299,11 +306,33 @@ class BronzemanMod {
         if (!Object.hasOwn(profile, "bronzemanItems")) {
             this.logger.info("[bronzeman] Fresh account, adding bronzemanItems");
             profile["bronzemanItems"] = [];
-        } else {
-            this.logger.info(`[bronzeman] Loaded ${profile["bronzemanItems"].length} unlocked items`);
         }
 
-        return profile["bronzemanItems"];
+        return [...profile["bronzemanItems"], ...this.categories, ...config.ignoreItems];
+    }
+
+    public canPurchase(profile: IAkiProfile, item: string): boolean {
+        const available = this.itemCheck(profile);
+
+        let [valid, checkItem] = this.itemHelper.getItem(item);
+        while (valid && checkItem._parent !== "") {
+            if (available.includes(checkItem._id)) {
+                if (config.debug) {
+                    let line = `[bronzeman] Allowed item: (${item}) ${this.itemHelper.getItemName(item)}`;
+                    if (checkItem._id !== item) line += ` based on parent (${checkItem._id}) ${this.itemHelper.getItemName(checkItem._id)}`;
+                    if (profile["bronzemanItems"].includes(checkItem._id)) line += " [UNLOCKED]";
+                    if (this.categories.includes(checkItem._id)) line += " [CATEGORY]";
+                    if (config.ignoreItems.includes(checkItem._id)) line += " [IGNORE]";
+                    this.logger.logWithColor(line, LogTextColor.WHITE, LogBackgroundColor.GREEN);
+                }
+                return true;
+            }
+            [valid, checkItem] = this.itemHelper.getItem(checkItem._parent);
+        }
+        if (!valid) {
+            this.logger.error(`[bronzeman] Failed to get parentage of (${item}) ${this.itemHelper.getItemName(item)}`)
+        }
+        return false;
     }
 
 }

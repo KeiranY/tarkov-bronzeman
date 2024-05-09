@@ -1,4 +1,5 @@
 - [ ] Sort available trader items to the front when showing unavailable offers with `hideItems`==false
+- [x] Add ignoreCategories to ignore whole item categories
 - [ ] Option to disable trader filtering, i.e. flea only
 - [ ] Allow traders/ignored items to be listed using their name instead
 - [ ] Add an (optional) trader that shows every unlocked item

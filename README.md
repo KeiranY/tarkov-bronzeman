@@ -30,13 +30,30 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 
 `includeRagfair`, if true will also restrict the flea market/ragfair.
 
+`ignoreCategories`, contains a list of settings that make whole catagories of items available without being unlocked.
+
 `ignoreItems`, items that can be purchased without being unlocked, useful for quest items i.e. the MS200 marker.
 
-`requireUnlockComponents`, if true you'll have to have unlocked every item on a weapon, in a bag, etc. in order to purchase it
+`requireUnlockComponents`, if true you'll have to have unlocked every item on a weapon, in a bag, etc. in order to purchase it.
 
-`debug`, if true will display additional debug information in the AKI Server window and in `user/logs`
+`debug`, if true will display additional debug information in the AKI Server window and in `user/logs`.
 
 ## Changelog
+
+## 1.1.0
+
+Features:
+
+- Introduce new `ignoreCategories` list of settings that make whole catagories of items available without being unlocked.
+
+## 1.0.0
+
+Features:
+
+- **Update to SPT AKI 3.8!**
+- Complete rewrite from scratch to reflect the new standard for modding
+- Added `debug` option to print verbose logging, ​Please use this when reporting issues​, issue template TBC
+- Flea market offers are now disabled instead of removed when the player hasn't unlocked them yet
 
 ## 0.2.0
 
