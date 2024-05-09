@@ -48,25 +48,25 @@ export class Bronzeman implements IPreAkiLoadMod {
         const staticRouterModService = container.resolve<StaticRouterModService>("StaticRouterModService");
         const dynamicRouterModService = container.resolve<DynamicRouterModService>("DynamicRouterModService");
         const httpResponseUtil = container.resolve<HttpResponseUtil>("HttpResponseUtil");
-        
-        // Initialise player on game start
-        container.afterResolution("GameController", (_, result: GameController) => {
-            const originalGameStart = result.gameStart;
 
-            result.gameStart = (url: string, info: IEmptyRequestData, sessionID: string, startTimeStampMS: number) => {
-                if (sessionID) {
-                    bronzeman.initPlayer(sessionID);
-                    if (config.debug) {
-                        for (const i of bronzeman.itemCheck(bronzeman.getPlayer(sessionID))) {
-                            const name = itemHelper.getItemName(i);
-                            logger.logWithColor(`[bronzeman] Existing unlock: (${i}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.BLUE);
+        // Initialise player on proflie load
+        staticRouterModService.registerStaticRouter("BronzemanProfileList", [
+            {
+                url: "/client/game/profile/list",
+                action: (url: string, info: IEmptyRequestData, sessionID: string, output: string /*IPmcData[]*/)=> {
+                    if (sessionID) {
+                        bronzeman.initPlayer(sessionID);
+                        if (config.debug) {
+                            for (const i of bronzeman.itemCheck(bronzeman.getPlayer(sessionID))) {
+                                const name = itemHelper.getItemName(i);
+                                logger.logWithColor(`[bronzeman] Existing unlock: (${i}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.BLUE);
+                            }
                         }
                     }
+                    return output;
                 }
-
-                originalGameStart.apply(result, [url, info, sessionID, startTimeStampMS]);
             }
-        });
+        ], "aki");
 
         // Handle end of raid
         staticRouterModService.registerStaticRouter("BronzemanRaidEnd", [
