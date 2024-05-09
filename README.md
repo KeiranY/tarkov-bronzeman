@@ -40,6 +40,12 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 
 ## Changelog
 
+## 1.1.1
+
+Features:
+
+- Fixes an issue where the mod would attempt to unlock items from the inventory of a newly created profile before it was fully created
+
 ## 1.1.0
 
 Features:
