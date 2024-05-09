@@ -1,0 +1,8 @@
+- [ ] Sort available trader items to the front when showing unavailable offers with `hideItems`==false
+- [ ] Option to disable trader filtering, i.e. flea only
+- [ ] Allow traders/ignored items to be listed using their name instead
+- [ ] Add an (optional) trader that shows every unlocked item
+  - [ ] Allow purchasing from this trader?
+- [ ] Integration with MoreCheckeckmarks/ItemInfo to show items that you've never extracted
+  - [ ] Morecheckmarks could be integrated by adding a quest that requires 1 of every item that can never be unlocked/started
+- [ ] Unlock notifications (NotificationSendHelper)

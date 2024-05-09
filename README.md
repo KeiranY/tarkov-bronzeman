@@ -12,8 +12,6 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 
 ## Configuration items
 
-`unlocks.raid`, if true allows you to unlock items extracted from a raid (unlikely you'd want this disabled)
-
 `unlocks.raidRunThrough`, if true allows you to unlock items even if the raid was a "Run Through".
 
 `unlocks.raidDeath`, if true allows you to unlock items even if you died/were MIA.
@@ -35,6 +33,8 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 `ignoreItems`, items that can be purchased without being unlocked, useful for quest items i.e. the MS200 marker.
 
 `requireUnlockComponents`, if true you'll have to have unlocked every item on a weapon, in a bag, etc. in order to purchase it
+
+`debug`, if true will display additional debug information in the AKI Server window and in `user/logs`
 
 ## Changelog
 

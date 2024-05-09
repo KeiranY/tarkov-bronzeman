@@ -1,6 +1,10 @@
 # builds
 *.zip
 
+# transpiled code
+src/*.js
+src/*.js.map
+
 # Logs
 logs
 *.log

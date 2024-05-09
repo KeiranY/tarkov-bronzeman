@@ -1,6 +1,5 @@
 {
     "unlocks": {
-        "raid": true,
         "raidRunThrough": false,
         "raidDeath": false,
         "inventory": true,
@@ -8,7 +7,7 @@
         "foundInRaidOnly": true
     },
     "hideItems": true,
-    "allTraders": false,
+    "allTraders": true,
     "traders": [
         "54cb50c76803fa8b248b4571",
         "54cb57776803fa99248b456e",
@@ -30,5 +29,6 @@
         "5b4391a586f7745321235ab2",
         "5910968f86f77425cf569c32"
     ],
-    "requireUnlockComponents": false
+    "requireUnlockComponents": false,
+    "debug": false
 }
