@@ -299,7 +299,7 @@ class BronzemanMod {
     }
 
     public checkInventory(profile: IAkiProfile): void {
-        this.unlockItems(profile, profile.characters.pmc.Inventory.items);
+        if (profile.characters.pmc.Inventory !== undefined) this.unlockItems(profile, profile.characters.pmc.Inventory.items);
     }
 
     public itemCheck(profile: IAkiProfile): string[] {
