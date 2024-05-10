@@ -362,7 +362,7 @@ class BronzemanQuestCallbacks extends QuestCallbacks {
     public override completeQuest(pmcData: IPmcData, body: ICompleteQuestRequestData, sessionID: string): IItemEventRouterResponse {
         const ret = super.completeQuest(pmcData, body, sessionID);
 
-        const quest = this.databaseServer.getTables().templates.quests[body.qid];
+        const quest = this.questHelper.getQuestFromDb(body.qid, pmcData);
         const items = this.questHelper.getQuestRewardItems(quest, QuestStatus.Success);
 
         if (items.length == 0) return ret;
