@@ -24,7 +24,6 @@ import { QuestController }              from "@spt-aki/controllers/QuestControll
 import { RepeatableQuestController }    from "@spt-aki/controllers/RepeatableQuestController";
 import type { DynamicRouterModService } from "@spt-aki/services/mod/dynamicRouter/DynamicRouterModService";
 import type { StaticRouterModService }  from "@spt-aki/services/mod/staticRouter/StaticRouterModService";
-import type { GameController }          from "@spt-aki/controllers/GameController";
 import type { HttpResponseUtil }        from "@spt-aki/utils/HttpResponseUtil";
 import { DependencyContainer, singleton, inject } from "tsyringe";
 import config from "../config.json";
@@ -105,7 +104,7 @@ export class Bronzeman implements IPreAkiLoadMod {
                         const profile = bronzeman.getPlayer(sessionID);
                         logger.info(`[bronzeman] Loading flea for ${profile.info.username} (${sessionID})`);
 
-                        const origCount = out.offers.filter(o => !o.notAvailable).length;
+                        const origCount = out.offers.filter(o => !o.notAvailable && !o.locked).length;
 
                         const toRemove = [];
                         for (const offer of out.offers) {
@@ -145,13 +144,21 @@ export class Bronzeman implements IPreAkiLoadMod {
                         out.offers = out.offers.map(offer => {
                             if (!toRemove.includes(offer.root)) return offer;
                             // offer.locked = true; - Sets to "Available after quest completion"
-                            // the below sets locked items to "You've reached the personal limit"
-                            offer.buyRestrictionMax = 1;
-                            offer.buyRestrictionCurrent = 1;
+                            // the below sets locked items to "You've reached the personal limit" but only works for trader offers
+                            // if (offer.user.memberType === MemberCategory.TRADER) {
+                            //     offer.buyRestrictionMax = 1;
+                            //     offer.buyRestrictionCurrent = 1;
+                            // } else {
+                            //     offer.locked = true;
+                            // }
+                            if (!offer.locked) {
+                                offer.items[0].upd.StackObjectsCount = 0;
+                                offer.items[0].upd.UnlimitedCount = false;
+                            }
                             return offer;
                         });
                         
-                        logger.info(`[bronzeman] Returning ${out.offers.filter(o => o.buyRestrictionMax != 1).length}/${origCount} available offers`);
+                        logger.info(`[bronzeman] Returning ${out.offers.filter(o => !o.notAvailable && !o.locked && o.items[0].upd.StackObjectsCount !== 0).length}/${origCount} available offers`);
 
                         return httpResponseUtil.getBody(out);
                     }
