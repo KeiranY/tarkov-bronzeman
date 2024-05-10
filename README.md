@@ -40,11 +40,20 @@ Upon installing this mod you'll notice that the traders are no longer willing to
 
 ## Changelog
 
+## 1.1.2
+
+Fixes:
+
+- Set the amount of items in player made flea market offers to 0 for locked items
+  - These offers can be filtered conveniently by setting *Filters -> Quantity From* to 1 or more in the flea market
+- Fixes as issue that where the mod would fail when handling the rewards from repeatable (daily/weekly) quests (*thanks to frugyman*)
+- Actually use the `unlocks.inventory` setting that was missed when porting to 1.0.0
+
 ## 1.1.1
 
-Features:
+Fixes:
 
-- Fixes an issue where the mod would attempt to unlock items from the inventory of a newly created profile before it was fully created
+- Fixes an issue where the mod would attempt to unlock items from the inventory of a newly created profile before it was fully created (*thanks to MrHighLife*)
 
 ## 1.1.0
 
