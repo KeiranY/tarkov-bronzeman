@@ -50,23 +50,25 @@ export class Bronzeman implements IPreAkiLoadMod {
         const httpResponseUtil = container.resolve<HttpResponseUtil>("HttpResponseUtil");
 
         // Initialise player on proflie load
-        staticRouterModService.registerStaticRouter("BronzemanProfileList", [
-            {
-                url: "/client/game/profile/list",
-                action: (url: string, info: IEmptyRequestData, sessionID: string, output: string /*IPmcData[]*/)=> {
-                    if (sessionID) {
-                        bronzeman.initPlayer(sessionID);
-                        if (config.debug) {
-                            for (const i of bronzeman.itemCheck(bronzeman.getPlayer(sessionID))) {
-                                const name = itemHelper.getItemName(i);
-                                logger.logWithColor(`[bronzeman] Existing unlock: (${i}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.BLUE);
+        if (config.unlocks.inventory) {
+            staticRouterModService.registerStaticRouter("BronzemanProfileList", [
+                {
+                    url: "/client/game/profile/list",
+                    action: (url: string, info: IEmptyRequestData, sessionID: string, output: string /*IPmcData[]*/)=> {
+                        if (sessionID) {
+                            bronzeman.initPlayer(sessionID);
+                            if (config.debug) {
+                                for (const i of bronzeman.itemCheck(bronzeman.getPlayer(sessionID))) {
+                                    const name = itemHelper.getItemName(i);
+                                    logger.logWithColor(`[bronzeman] Existing unlock: (${i}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.BLUE);
+                                }
                             }
                         }
+                        return output;
                     }
-                    return output;
                 }
-            }
-        ], "aki");
+            ], "aki");
+        }
 
         // Handle end of raid
         staticRouterModService.registerStaticRouter("BronzemanRaidEnd", [
