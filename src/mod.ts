@@ -1,5 +1,5 @@
-
 import { IPreAkiLoadMod }               from "@spt-aki/models/external/IPreAkiLoadMod";
+import { IPostDBLoadMod } from "@spt-aki/models/external/IPostDBLoadMod";
 import { ILogger }                      from "@spt-aki/models/spt/utils/ILogger";
 import { LogTextColor }                 from "@spt-aki/models/spt/logging/LogTextColor";
 import { LogBackgroundColor }           from "@spt-aki/models/spt/logging/LogBackgroundColor";
@@ -28,7 +28,8 @@ import type { HttpResponseUtil }        from "@spt-aki/utils/HttpResponseUtil";
 import { DependencyContainer, singleton, inject } from "tsyringe";
 import config from "../config.json";
 
-export class Bronzeman implements IPreAkiLoadMod {
+export class Bronzeman implements IPreAkiLoadMod, IPostDBLoadMod {
+
     public preAkiLoad(container: DependencyContainer): void {
         // Register our class of mod helper functions
         container.register("BronzemanMod", { useClass: BronzemanMod });
@@ -227,6 +228,23 @@ export class Bronzeman implements IPreAkiLoadMod {
                 }
             }
         ], "aki")
+    }
+
+    public postDBLoad(container: DependencyContainer): void {
+        if (config.removeTraderRepLimits) {
+            const databaseServer: DatabaseServer = container.resolve<DatabaseServer>("DatabaseServer");
+
+            // Get a reference to the database tables
+            const tables = databaseServer.getTables();
+
+            for (const [traderId, trader] of Object.entries(tables.traders)) {
+                if (tables.traders[traderId].assort === undefined) continue;
+
+                for (const itemId of Object.keys(trader.assort.loyal_level_items)) {
+                    tables.traders[traderId].assort.loyal_level_items[itemId] = 1;
+                }
+            }
+        }
     }
 }
 

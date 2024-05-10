@@ -18,6 +18,7 @@
         "5ac3b934156ae10c4430e83c",
         "5c0647fdd443bc2504c2d371"
     ],
+    "removeTraderRepLimits": true,
     "includeRagfair": true,
     "ignoreCategories": {
         "keys": true,
