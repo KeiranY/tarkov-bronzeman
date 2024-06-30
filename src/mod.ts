@@ -311,7 +311,7 @@ class BronzemanMod {
     // Player wishlist reinitialisation
     // This is necessary to do when the user adds/removes items from the game
     // Now it's done on every profile load (Game start)
-    // TODO: Do this on server start instead of every profile load
+    // TODO: Do this on server start instead of every profile load?
     public onProfileLoad(sessionID: string) {
         const profile = this.saveServer.getProfile(sessionID);
 
@@ -322,6 +322,11 @@ class BronzemanMod {
         const itemsForWishlist = [];
         this.itemHelper.getItems().forEach(i => {
             // if category[] includes the item parent, remove it from the wishlist
+            // also do not add items that are:
+            // - in the ignoreItems list
+            // - in the unlocked list
+            // - quest items
+            // - ammo boxes
             if (!this.isParentIncludedInIngnoredCategories(i._id) && !this.categories.includes(i._id) && !config.ignoreItems.includes(i._id) && !unlocked.includes(i._id) && i._parent !== "543be5cb4bdc2deb348b4568" && !i._props.QuestItem === true) {
                 itemsForWishlist.push(i._id);
             }
