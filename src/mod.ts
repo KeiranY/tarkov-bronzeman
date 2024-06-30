@@ -341,16 +341,16 @@ class BronzemanMod {
     public isParentIncludedInIngnoredCategories(item: string): boolean {
         const [valid, checkItem] = this.itemHelper.getItem(item);
         if (!valid) {
-            console.log(`Failed to get item: ${item}`);
+            if (config.debug) this.logger.info(`[bronzeman] Failed to get item: ${item}`);
             return false; // Assuming false as default if item can't be fetched
         }
-        console.log(`Checking item: ${item}, Parent: ${checkItem._parent}`);
+        if (config.debug) this.logger.info(`[bronzeman] Checking item: ${item}, Parent: ${checkItem._parent}`);
         if (checkItem._parent === "") {
-            console.log(`Reached top parent for item: ${item}`);
+            if (config.debug) this.logger.info(`[bronzeman] Reached top parent for item: ${item}`);
             return false;
         }
         if (this.categories.includes(checkItem._parent)) {
-            console.log(`Item: ${item} is ignored due to parent: ${checkItem._parent}`);
+            if (config.debug) this.logger.info(`[bronzeman] Item: ${item} is ignored due to parent: ${checkItem._parent}`);
             return true;
         }
         return this.isParentIncludedInIngnoredCategories(checkItem._parent);
