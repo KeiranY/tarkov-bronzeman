@@ -54,5 +54,6 @@
         "5910968f86f77425cf569c32"
     ],
     "requireUnlockComponents": false,
-    "debug": false
+    "debug": false,
+    "useWishList": false
 }
