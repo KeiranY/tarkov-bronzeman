@@ -49,6 +49,34 @@ export class Bronzeman implements IPreAkiLoadMod, IPostDBLoadMod {
         const dynamicRouterModService = container.resolve<DynamicRouterModService>("DynamicRouterModService");
         const httpResponseUtil = container.resolve<HttpResponseUtil>("HttpResponseUtil");
 
+        if (config.useWishList) {
+            staticRouterModService.registerStaticRouter("BronzemanProfileLoad",
+                [{
+                    url: "/client/game/start",
+                    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                    action: (url: string, info: any, sessionId: string, output: string) => {
+                        bronzeman.onProfileLoad(sessionId);
+                        logger.info(`[bronzeman] Checking bronzemanItems for (${sessionId})`);
+                        return output;
+                    }
+                }], "aki"
+            );
+        }
+
+        if (config.useWishList) {
+            staticRouterModService.registerStaticRouter("BronzemanProfileLoad",
+                [{
+                    url: "/client/game/profile/create",
+                    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                    action: (url: string, info: any, sessionId: string, output: string) => {
+                        bronzeman.onProfileLoad(sessionId);
+                        logger.info(`[bronzeman] Initializing bronzemanItems (${sessionId})`);
+                        return output;
+                    }
+                }], "aki"
+            );
+        }
+
         // Initialise player on proflie load
         if (config.unlocks.inventory) {
             staticRouterModService.registerStaticRouter("BronzemanProfileList", [
@@ -256,7 +284,8 @@ class BronzemanMod {
     constructor(
         @inject("WinstonLogger") private logger: ILogger,
         @inject("SaveServer") private saveServer: SaveServer,
-        @inject("ItemHelper") private itemHelper: ItemHelper
+        @inject("ItemHelper") private itemHelper: ItemHelper,
+        @inject("TraderHelper") private traderhelper: TraderHelper
     ) {
         // Allow ignored categories
         if (config.ignoreCategories.keys) this.categories.push("543be5e94bdc2df1348b4568");
@@ -290,7 +319,59 @@ class BronzemanMod {
         const profile = this.saveServer.getProfile(sessionID);
 
         this.itemCheck(profile);
-        this.checkInventory(profile);  
+        this.checkInventory(profile);
+        this.logger.info(`[bronzeman] Initialised player ${profile.info.username} (${sessionID})`);
+    }
+
+    // Player wishlist reinitialisation
+    // This is necessary to do when the user adds/removes items from the game
+    // Now it's done on every profile load (Game start)
+    // TODO: Do this on server start instead of every profile load?
+    public onProfileLoad(sessionID: string) {
+        const profile = this.saveServer.getProfile(sessionID);
+
+        const unlocked = new Set(profile["bronzemanItems"] ?? []);
+        const originalWishlist = new Set(profile.characters.pmc.WishList ?? []);
+
+        // Go through items in the game and filter out the ones that are unlocked, in the wishlist, or in the ignored categories
+        const itemsForWishlist = this.itemHelper.getItems().filter(i => 
+            !this.isParentIncludedInIngnoredCategories(i._id) &&
+            !this.categories.includes(i._id) &&
+            !config.ignoreItems.includes(i._id) && 
+            !unlocked.has(i._id) && 
+            i._parent !== "543be5cb4bdc2deb348b4568" && 
+            !i._props.QuestItem
+        ).map(i => i._id);
+
+        // Assign the new wishlist to the profile
+        profile.characters.pmc.WishList = itemsForWishlist;
+        // Log the changes
+        const removedItemsCount = originalWishlist.size - itemsForWishlist.length;
+        if (removedItemsCount < 0) {
+            // If more items are in the new wishlist, it means items were added
+            this.logger.info(`[bronzeman] Added ${Math.abs(removedItemsCount)} missing items to wishlist for ${profile.info.username} (${sessionID})`);
+        } else {
+            // If more items were in the original wishlist, it means items were removed
+            this.logger.info(`[bronzeman] Removed ${removedItemsCount} unlocked items from wishlist for ${profile.info.username} (${sessionID})`);
+        }
+    }
+
+    public isParentIncludedInIngnoredCategories(item: string): boolean {
+        const [valid, checkItem] = this.itemHelper.getItem(item);
+        if (!valid) {
+            if (config.debug) this.logger.info(`[bronzeman] Failed to get item: ${item}`);
+            return false; // Assuming false as default if item can't be fetched
+        }
+        if (config.debug) this.logger.info(`[bronzeman] Checking item: ${item}, Parent: ${checkItem._parent}`);
+        if (checkItem._parent === "") {
+            if (config.debug) this.logger.info(`[bronzeman] Reached top parent for item: ${item}`);
+            return false;
+        }
+        if (this.categories.includes(checkItem._parent)) {
+            if (config.debug) this.logger.info(`[bronzeman] Item: ${item} is ignored due to parent: ${checkItem._parent}`);
+            return true;
+        }
+        return this.isParentIncludedInIngnoredCategories(checkItem._parent);
     }
 
     public getPlayer(sessionID: string): IAkiProfile {
@@ -317,6 +398,13 @@ class BronzemanMod {
             if (profile["bronzemanItems"].includes(item._tpl)) continue;
             // Unlock item
             profile["bronzemanItems"].push(item._tpl);
+            // Remove the unlocked item from the wishlist
+            if (config.useWishList) {
+                const index = profile.characters.pmc.WishList.indexOf(item._tpl);
+                if (index > -1) {
+                    profile.characters.pmc.WishList.splice(index, 1);
+                }
+            }
             if (config.debug) {
                 const name = this.itemHelper.getItemName(item._tpl);
                 this.logger.logWithColor(`[bronzeman] Unlocking: (${item._tpl}) ${name}`, LogTextColor.WHITE, LogBackgroundColor.GREEN);
@@ -336,6 +424,10 @@ class BronzemanMod {
         }
 
         return [...profile["bronzemanItems"], ...this.categories, ...config.ignoreItems];
+    }
+
+    public getAllCategoryItems(category: string): string[] {
+        return this.itemHelper.getItems().filter(i => i._parent === category).map(i => i._id);
     }
 
     public canPurchase(profile: IAkiProfile, item: string): boolean {
