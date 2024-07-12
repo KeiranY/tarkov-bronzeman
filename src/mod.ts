@@ -56,6 +56,21 @@ export class Bronzeman implements IPreAkiLoadMod, IPostDBLoadMod {
                     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
                     action: (url: string, info: any, sessionId: string, output: string) => {
                         bronzeman.onProfileLoad(sessionId);
+                        logger.info(`[bronzeman] Checking bronzemanItems for (${sessionId})`);
+                        return output;
+                    }
+                }], "aki"
+            );
+        }
+
+        if (config.useWishList) {
+            staticRouterModService.registerStaticRouter("BronzemanProfileLoad",
+                [{
+                    url: "/client/game/profile/create",
+                    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+                    action: (url: string, info: any, sessionId: string, output: string) => {
+                        bronzeman.onProfileLoad(sessionId);
+                        logger.info(`[bronzeman] Initializing bronzemanItems (${sessionId})`);
                         return output;
                     }
                 }], "aki"
@@ -315,27 +330,30 @@ class BronzemanMod {
     public onProfileLoad(sessionID: string) {
         const profile = this.saveServer.getProfile(sessionID);
 
-        const unlocked = profile["bronzemanItems"];
-        const wishlist = profile.characters.pmc.WishList;
-        
+        const unlocked = new Set(profile["bronzemanItems"] ?? []);
+        const originalWishlist = new Set(profile.characters.pmc.WishList ?? []);
+
         // Go through items in the game and filter out the ones that are unlocked, in the wishlist, or in the ignored categories
-        const itemsForWishlist = [];
-        this.itemHelper.getItems().forEach(i => {
-            // if category[] includes the item parent, remove it from the wishlist
-            // also do not add items that are:
-            // - in the ignoreItems list
-            // - in the unlocked list
-            // - quest items
-            // - ammo boxes
-            if (!this.isParentIncludedInIngnoredCategories(i._id) && !this.categories.includes(i._id) && !config.ignoreItems.includes(i._id) && !unlocked.includes(i._id) && i._parent !== "543be5cb4bdc2deb348b4568" && !i._props.QuestItem === true) {
-                itemsForWishlist.push(i._id);
-            }
-        });
+        const itemsForWishlist = this.itemHelper.getItems().filter(i => 
+            !this.isParentIncludedInIngnoredCategories(i._id) &&
+            !this.categories.includes(i._id) &&
+            !config.ignoreItems.includes(i._id) && 
+            !unlocked.has(i._id) && 
+            i._parent !== "543be5cb4bdc2deb348b4568" && 
+            !i._props.QuestItem
+        ).map(i => i._id);
+
         // Assign the new wishlist to the profile
         profile.characters.pmc.WishList = itemsForWishlist;
         // Log the changes
-        const origCount = wishlist.length;
-        this.logger.info(`[bronzeman] Removed ${origCount - profile.characters.pmc.WishList.length} unlocked items from wishlist for ${profile.info.username} (${sessionID})`);
+        const removedItemsCount = originalWishlist.size - itemsForWishlist.length;
+        if (removedItemsCount < 0) {
+            // If more items are in the new wishlist, it means items were added
+            this.logger.info(`[bronzeman] Added ${Math.abs(removedItemsCount)} missing items to wishlist for ${profile.info.username} (${sessionID})`);
+        } else {
+            // If more items were in the original wishlist, it means items were removed
+            this.logger.info(`[bronzeman] Removed ${removedItemsCount} unlocked items from wishlist for ${profile.info.username} (${sessionID})`);
+        }
     }
 
     public isParentIncludedInIngnoredCategories(item: string): boolean {
